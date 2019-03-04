@@ -227,3 +227,143 @@ Now if we say:
 show tables;
 ```
 It shows the 3 tables. 
+
+#### What is Dataproc:
+It is a cluster of machines we can run all Hadoop ecosystem on them and it is managed by Google.
+
+The data can be also run from HDFS into Dataproc. The problem is, if you get rid of the compute engine, the data go away so you have to keep the compute engine if you want to keep the data. A better way is to save data in Google cloud storage which is already integrated with Dataproc. In this way we can have the data, do some processing on the cluster, finish it, and delete the cluster but the data is still in GCS.
+
+Dataproc is a sort of job specific tool that we run to have a job done and delete it.
+
+
+We want to run a spark code to make a recommendation on rental list. the beginning of the lab is the same as the last lab. After we make the mysql instance and import the data, we need to make a dataproc cluster. It's easy and straight forward. the location of the cluster has to be as close as possible to the database's location. 
+
+In order to run the Spark cluster, we need to first go to lab3b and run authorize_dataproc.sh to authorize the dataproc cluster.
+
+```
+bash authorize_dataproc.sh <cluster_name> <cluster_zone> <total_worker_nodes>
+```
+Now the dataproc and mysql are set together and we can run our ml model.
+
+Then we can open sparkml folder, and there is file called train_and_apply.py. we run it by nano:
+```
+nano train_and_apply.py
+```
+we need to adjust some parts of the code to work with our dataproc and database.
+
+1) mysql ip address has to be changed. CLAUDSQL_INSRANCE_IP = '35.222.78.27'
+2) mysql password , CLAUDSQL_PWD='rentals'
+
+Now we save the file and exit (Ctrl+o for save and Ctrl+x for exit)
+
+Now we copy the file into the bucket:
+```
+gsutil cp train_and_apply.py gs//mj-rentals
+```
+Then we open dataproc/jobs in the dashboard. Inside teh jobs pages, on the top, we click on "submit a job".
+
+In the form, we change the region to where our cluster is, and the cluster name shows up automatically. for job type we select pySpark.
+
+We are asked to add a python file path for the job, which is the spark file we copied. we need to copy its path:
+```
+gs://mj-rentals/train_and_apply.py
+```
+Now we click it to run, and it may take up to 5 minutes. And now the recommendations for each user have been created.
+
+We can run mysql through the shell and see the recommendation which are already populated in teh recommendation table.
+
+But we need to authorize the shell again one more time to be able to use mysql. the code is located at lab3a. we run it by bash.
+
+__Resources:__ 
+- This [webpage](https://cloud.google.com/solutions/) has a lot of examples on how to implement GCP techniques in real world examples:
+- [here](https://cloud.google.com/solutions/recommendations-using-machine-learning-on-compute-engine) is a very useful recommendation system tutorial by Google that explains all the steps.
+
+### Scaling Data Analysis:
+
+In this part, he explained a bit about non-relational databases that can be handled by Bigtable and it uses the technology that Spark Hbase uses. I didn't understand it much but will read about it later.
+
+##### There is a very powerful tool at BigQuery:
+
+If you have millions of rows already on GCP, you can join the table with a small table in Google Sheet and get teh results, using a techniques called __Federated Data Source.__
+
+#### What is Datalab?
+
+It is an open source notebook built on Jupyter to run python codes directly at GCP.
+
+(photo: datalab-cycle.jpg)
+
+We can do the analysis using Datalab, inside VM using any size of CPU we need, then save it on Github. Also, while doing the analysis we can still change the VM configuration, and run the datalab again with new VM machine.
+
+Once we have a datalab running, we can directly connect it to BigQuery and import data. 
+
+For doing this, we need to use a library called:
+```
+google.datalab.bigquery
+```
+It is so powerful and makes analysis so easy and powerful.
+
+Check this photo: (bigquery_pandas(datalab)_integration.JPG)
+
+#### lab 5:
+
+We want to run Datalab and some ML code on data from BigQuery. We connect to the lab, and open the GCloud shell. In order to see what compute zones are available:
+```
+gcloud compute zones list
+```
+Now we create a datalab called bdmlvm like this:
+```
+datalab create bdmlvm --zone us-central1-a
+```
+It takes up to 5 minutes to start. Once the datalab is ready, we click on the top of the shell, on "web preview" and then click on "Change port" then we change it from 8080 to 8081.
+
+#### Machine Learning with TensorFlow.
+
+Behind most of Machine learning tasks in GCP, TensorFlow is doing it. IT is Written in C++ and it can be run anywhere even android phones. But because it's hard to deal with C++, there is an API in Python, so that people write the code in Python, and Python talks to C++ and get the job done.
+
+__NOTE:__ 
+Another name for __dummy variables__ t convert categorical data into numerical, is __One-Hot Encoding.__
+
+__Nice Trick to Know what feature we can discard and has no meaning:__
+
+Count if in the whole dataset, there will be 5-10 examples from each value? for example in this dataset (trick-to-discard-some-columns-before-ml.jpg), the column mintemp, can be kept because we would probably have more than 5 values around 28.9, or the same thing is true for maxtemp or rain. but for daynumber, there is only two example of 77 because we have the data from two years, and day 77 repeats two time. In this case we can get rid of daynumber.
+
+- we don't need to make machine learning models from scratch. There is a full spectrum of machine learning algorithms available on GCP. The service is called Cloud ML.
+
+The idea, is no need to reinvent the wheel while it is already made. For most of the use cases, cloud ML has already been developed to solve problems. Also we don't have enough data in most cases to train our models, but Google does. This is all possible using ML API.
+
+In fact, for some cases, like speech model, language processing model, and vision models, Google has gigantic datasets that make the prediction so accurate that no one can compete with, so better to use the opportunity.
+
+Also Sentiment analysis is avaialble in Google ML API.
+
+#### List of pre-built ML API's available at GCP:
+1- __[Vision API:](https://cloud.google.com/vision/)__ face detection, label detection, OCR(extracting word from photo), Explicit content detection, landmark detection.
+
+ 
+ 2- __[Translation API:](https://cloud.google.com/translate/)__ It is the service that you can use the camera in front of a word in a language and it will be translated in another language.
+ 
+ 3- __[Natural Language Processing (NLP) API:](https://cloud.google.com/natural-language/)__ It does all NLP tasks including sentiment analysis.
+ 
+ 
+4- __[Speech-to-Text:](https://cloud.google.com/speech-to-text/)__ We can talk and this API writes it down.
+
+5- __[Video Intelligence:](https://cloud.google.com/video-intelligence/)__ Gives a lot of info about a movie played.
+
+How to access these API's we go to the dashboard uder APIs and Services, click Library.
+
+The sample code is provided here:
+
+```
+git clone https://github.com/GoogleCloudPlatform/training-data-analyst/GCB100/lab4c/mlapis.ipynp
+```
+This example is so useful and has sentiments analysis code example.
+
+#### Serverless Data Pipelines:
+
+Asynchronous processing is so useful for long-lived tasks or to have loose coupling between two systems. Imagine you have an app that has designed for 100 users, but there would be some peak times that 4000 users would use it. In this case your app can be either crushed, or the better option is, to queue tasks up, and every user get the response but a bit delayed. The request comes through, but doesn't get immediately responded.
+
+It is a very common and useful approach of building a highly available application. It reduces the coupling. for example if some users are doing all the same thing at the same time. Then asynchronous system can have a message queue to help the app work more agile.
+
+This system is for messaging specifically. it is called Cloud Pub/Sub.
+
+__NOTE:__ A key to real time data processing and doing ML, like messaging system, is a bit explained in the video called "Serverless data pipelines" and the key is in Cloud Pub/Sub, spark, and DataFlow.
+
